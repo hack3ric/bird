@@ -468,6 +468,56 @@ int ip6_pton(const char *a, ip6_addr *o);
 
 
 /*
+ *	IPv6 bit shifting
+ */
+
+static inline ip6_addr
+ip6_shift_left(ip6_addr a, uint bits) {
+  int bytes, rem, i;
+
+  if (bits == 0)
+    return a;
+
+  if (bits > 127)
+    return IP6_NONE;
+
+  bytes = bits / 32;
+  rem = bits % 32;
+
+  for (i = 0; i < 3 - bytes; i++)
+    a.addr[i] = (a.addr[i + bytes] << rem) |
+                (rem ? (a.addr[i + bytes + 1] >> (32 - rem)) : 0);
+
+  a.addr[3 - bytes] = a.addr[3] << rem;
+  memset(&a.addr[4 - bytes], 0, bytes * 4);
+
+  return a;
+}
+
+static inline ip6_addr
+ip6_shift_right(ip6_addr a, uint bits) {
+  int bytes, rem, i;
+
+  if (bits == 0)
+    return a;
+
+  if (bits > 127)
+    return IP6_NONE;
+
+  bytes = bits / 32;
+  rem = bits % 32;
+  for (i = 3; i > bytes; i--)
+    a.addr[i] = (a.addr[i - bytes] >> rem) |
+                (rem ? (a.addr[i - bytes - 1] << (32 - rem)) : 0);
+
+  a.addr[bytes] = a.addr[0] >> rem;
+  memset(&a.addr[0], 0, bytes * 4);
+
+  return a;
+}
+
+
+/*
  *	Miscellaneous
  */
 
